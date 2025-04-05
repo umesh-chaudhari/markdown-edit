@@ -2,17 +2,18 @@ import React, {useState, useEffect} from 'react';
 import {marked} from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
+import { markedHighlight } from 'marked-highlight';
+
 import { Download, Moon, Sun, FileText, Settings, Info, X} from 'lucide-react';
 
-marked.setOptions({
-    highlight: function (code: string, lang: string) {
-        if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(code, {language: lang}).value;
-        }
-        return hljs.highlightAuto(code).value;
-    },
-    breaks: true,
-});
+marked.use(
+    markedHighlight({
+        highlight(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, { language }).value;
+        },
+    })
+);
 
 interface ModalProps {
     title: string;
@@ -74,7 +75,6 @@ const MarkdownEditor: React.FC = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
     const [showHelp, setShowHelp] = useState<boolean>(false);
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [exportOptions, setExportOptions] = useState<string>('PDF');
 
     useEffect(() => {
         setCharCount(markdown.length);
@@ -118,8 +118,8 @@ const MarkdownEditor: React.FC = () => {
         setMarkdown(e.target.value);
     };
 
-    const exportHtml = () => {
-        const htmlContent = marked(markdown);
+    const exportHtml = async () => {
+        const htmlContent = await marked(markdown);
         const blob = new Blob([htmlContent], {type: 'text/pdf'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -413,7 +413,7 @@ const MarkdownEditor: React.FC = () => {
 
 const GlobalStyles = () => {
     return (
-        <style jsx="true" global="true">{`
+        <style>{`
             .markdown-preview h1 {
                 font-size: 2em;
                 margin-bottom: 0.5em;
